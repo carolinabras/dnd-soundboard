@@ -1,6 +1,6 @@
 {
   "name": "dnd-soundboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "D&D Soundboard - play ambient sounds and music for tabletop RPG sessions",
   "main": "dist/main/index.js",
   "scripts": {

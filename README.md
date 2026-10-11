@@ -87,6 +87,17 @@ The installer is written to `release/D&D Soundboard Setup <version>.exe`. That s
 
 The default Electron icon is used. To use a custom one, add `build/icon.ico` (256×256 recommended) and uncomment the `icon` line in `electron-builder.yml`.
 
+### Publishing a release
+
+Installers are published as [GitHub Releases](https://github.com/carolinabras/dnd-soundboard/releases), not committed to git (that would add ~75 MB to every clone per version).
+
+1. Bump the version: `npm version 1.0.2 --no-git-tag-version`, then commit and push.
+2. Build: `npm run dist`.
+3. Publish (rename the file first; GitHub mangles spaces and `&` in download names):
+   ```sh
+   gh release create v1.0.2 "DnD-Soundboard-Setup-1.0.2.exe" --title "v1.0.2" --notes "What changed"
+   ```
+
 `signAndEditExecutable` is turned off because electron-builder's signing tools fail on Windows without symlink privileges. The installer is unsigned, so Windows SmartScreen will warn on first run.
 
 ## Project structure
