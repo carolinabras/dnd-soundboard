@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { YoutubeDownloadResult, YoutubeProgress, parseYoutubeId } from '../shared/types';
 
-const YT_DLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
+const YT_DLP_RELEASES = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/';
 // YouTube changes often and a stale yt-dlp is the most common cause of failed downloads
 const UPDATE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -24,8 +24,22 @@ export function allowYoutubeEmbeds(): void {
   );
 }
 
+/** yt-dlp publishes a standalone build per platform; these are the release asset names. */
+function ytDlpAsset(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'yt-dlp.exe';
+    case 'darwin':
+      return 'yt-dlp_macos'; // universal: Intel and Apple Silicon
+    case 'linux':
+      return process.arch === 'arm64' ? 'yt-dlp_linux_aarch64' : 'yt-dlp_linux';
+    default:
+      throw new Error(`YouTube download isn't supported on ${process.platform}. Use Stream instead.`);
+  }
+}
+
 function ytDlpPath(): string {
-  return path.join(app.getPath('userData'), 'bin', 'yt-dlp.exe');
+  return path.join(app.getPath('userData'), 'bin', ytDlpAsset());
 }
 
 function run(
@@ -60,10 +74,11 @@ async function ensureYtDlp(report: Reporter): Promise<string> {
   if (!fs.existsSync(exe)) {
     report({ stage: 'installing' });
     fs.mkdirSync(path.dirname(exe), { recursive: true });
-    const res = await net.fetch(YT_DLP_URL);
+    const res = await net.fetch(YT_DLP_RELEASES + ytDlpAsset());
     if (!res.ok) throw new Error(`Couldn't download the YouTube downloader (HTTP ${res.status}).`);
     const partial = `${exe}.part`;
-    fs.writeFileSync(partial, Buffer.from(await res.arrayBuffer()));
+    // 0o755 so macOS/Linux can execute it (ignored on Windows)
+    fs.writeFileSync(partial, Buffer.from(await res.arrayBuffer()), { mode: 0o755 });
     fs.renameSync(partial, exe);
   } else if (Date.now() - fs.statSync(exe).mtimeMs > UPDATE_AFTER_MS) {
     report({ stage: 'updating' });

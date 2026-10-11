@@ -25,6 +25,19 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+/**
+ * file:// URL for a file in a directory, on Windows ("C:\Users\...") or macOS/Linux ("/Users/...").
+ * Each segment is percent-encoded so spaces ("Application Support"), '#' and accents survive.
+ */
+export function toFileUrl(dir: string, file: string): string {
+  const segments = [...dir.replace(/\\/g, '/').split('/'), file];
+  const encoded = segments
+    .map((seg) => (/^[A-Za-z]:$/.test(seg) ? seg : encodeURIComponent(seg)))
+    .join('/');
+  // POSIX paths already start with "/" (giving file:///Users/...); drive paths need it added
+  return encoded.startsWith('/') ? `file://${encoded}` : `file:///${encoded}`;
+}
+
 function formatTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -99,9 +112,7 @@ export class Soundboard {
   }
 
   private fileUrl(config: SoundConfig): string {
-    const base = config.custom ? this.customSoundsPath : this.soundsPath;
-    const normalized = base.replace(/\\/g, '/');
-    return `file:///${normalized}/${config.file}`;
+    return toFileUrl(config.custom ? this.customSoundsPath : this.soundsPath, config.file);
   }
 
   private toggleSound(soundId: string): void {

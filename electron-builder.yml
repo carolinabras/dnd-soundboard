@@ -19,11 +19,36 @@ win:
   requestedExecutionLevel: asInvoker
   signAndEditExecutable: false
 
+# Artifact names avoid spaces and "&", which GitHub rewrites in download names
 nsis:
+  artifactName: DnD-Soundboard-Setup-${version}.${ext}
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: D&D Soundboard
+
+# macOS can only be built on a Mac (see .github/workflows/release.yml).
+# Unsigned: without an Apple Developer ID, users right-click the app > Open the first time.
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+  category: public.app-category.music
+  identity: null
+
+dmg:
+  artifactName: DnD-Soundboard-${version}-mac.${ext}
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Audio
+
+appImage:
+  artifactName: DnD-Soundboard-${version}-linux-x86_64.${ext}
 
 publish: null

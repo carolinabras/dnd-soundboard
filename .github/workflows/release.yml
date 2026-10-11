@@ -1,0 +1,77 @@
+# Builds the Windows, macOS and Linux installers and attaches them to a GitHub Release.
+#
+# Runs when a release is published (e.g. `gh release create v1.0.2 --notes "..."`),
+# or manually from the Actions tab for an existing tag.
+
+name: Build installers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and upload to (e.g. v1.0.2)
+        required: true
+
+permissions:
+  contents: write # upload release assets
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            builder-args: --win --x64
+            artifact: release/*.exe
+          - name: macOS
+            os: macos-latest
+            builder-args: --mac
+            artifact: release/*.dmg
+          - name: Linux
+            os: ubuntu-latest
+            builder-args: --linux
+            artifact: release/*.AppImage
+
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Check tag matches package.json version
+        shell: bash
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$expected" ]; then
+            echo "::error::Tag $TAG doesn't match package.json version ($expected). Bump the version before releasing."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Package
+        run: npx electron-builder ${{ matrix.builder-args }} --publish never
+        env:
+          # no signing certificate; build unsigned instead of searching the keychain
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" ${{ matrix.artifact }} --clobber
