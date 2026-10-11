@@ -203,10 +203,11 @@ export class Soundboard {
 
   // ── Sound / category mutation ───────────────────────────────────────────
 
-  private async deleteSound(soundId: string): Promise<void> {
+  /** Returns false if the user backed out of the confirmation. */
+  private async deleteSound(soundId: string): Promise<boolean> {
     const config = this.sounds.find((s) => s.id === soundId);
-    if (!config) return;
-    if (!confirm(`Delete "${config.name}"? This cannot be undone.`)) return;
+    if (!config) return false;
+    if (!confirm(`Delete "${config.name}"? This cannot be undone.`)) return false;
 
     if (this.active.has(soundId)) this.stopSound(soundId);
     if (config.hotkey) await window.soundboardAPI.unregisterHotkey(config.hotkey);
@@ -215,6 +216,7 @@ export class Soundboard {
     this.sounds = this.sounds.filter((s) => s.id !== soundId);
     await this.persist();
     this.render();
+    return true;
   }
 
   private async deleteCategory(category: string): Promise<void> {
@@ -449,13 +451,13 @@ export class Soundboard {
     card.innerHTML = `
       <div class="card-top">
         <span class="sound-name">${soundIcon}${escapeHtml(config.name)}</span>
+        ${hotkeyBadge}
         ${streamBadge}
         ${categoryBadge}
       </div>
       <div class="card-controls">
         <button class="btn-play">${escapeHtml(this.playLabel(isPlaying))}</button>
         <button class="btn-loop${config.loop ? ' looping' : ''}" title="Loop">${escapeHtml(icons.loop)}</button>
-        ${hotkeyBadge}
         <button class="btn-edit" title="Edit">${escapeHtml(icons.edit)}</button>
         <button class="btn-delete" title="Delete">${escapeHtml(icons.delete)}</button>
       </div>
@@ -651,6 +653,7 @@ export class Soundboard {
         </div>
         <div class="modal-error" style="display:none"></div>
         <div class="modal-actions">
+          <button type="button" class="btn-modal-delete">Delete Sound</button>
           <button type="button" class="btn-modal-cancel">Cancel</button>
           <button type="button" class="btn-modal-save">Save</button>
         </div>
@@ -709,6 +712,9 @@ export class Soundboard {
       }
     });
     overlay.querySelector('.btn-modal-cancel')!.addEventListener('click', () => this.closeModal());
+    overlay.querySelector('.btn-modal-delete')!.addEventListener('click', async () => {
+      if (this.editingId && await this.deleteSound(this.editingId)) this.closeModal();
+    });
     overlay.querySelector('.btn-modal-save')!.addEventListener('click', () => this.saveModal());
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) this.closeModal();
@@ -756,6 +762,7 @@ export class Soundboard {
     this.resetYoutubeBox();
 
     (this.modalEl.querySelector('.modal-title') as HTMLElement).textContent = 'Add Sound';
+    (this.modalEl.querySelector('.btn-modal-delete') as HTMLElement).style.display = 'none';
     (this.modalEl.querySelector('#modal-name') as HTMLInputElement).value = '';
     (this.modalEl.querySelector('#modal-hotkey') as HTMLInputElement).value = '';
     (this.modalEl.querySelector('#modal-volume') as HTMLInputElement).value = '1';
@@ -778,6 +785,7 @@ export class Soundboard {
     this.resetYoutubeBox();
 
     (this.modalEl.querySelector('.modal-title') as HTMLElement).textContent = 'Edit Sound';
+    (this.modalEl.querySelector('.btn-modal-delete') as HTMLElement).style.display = '';
     (this.modalEl.querySelector('#modal-name') as HTMLInputElement).value = config.name;
     (this.modalEl.querySelector('#modal-hotkey') as HTMLInputElement).value = config.hotkey ?? '';
     (this.modalEl.querySelector('#modal-volume') as HTMLInputElement).value = String(config.volume ?? 1);

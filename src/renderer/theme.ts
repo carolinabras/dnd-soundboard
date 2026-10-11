@@ -55,7 +55,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     pause: '❚❚',
     loop: '↺',
     edit: '✏️',
-    delete: '🗑',
+    // U+FE0F asks for the color emoji; without it Windows draws a faint outline glyph
+    delete: '\u{1F5D1}️',
     volume: '🔊',
     stopAll: '■',
     add: '+',
@@ -108,12 +109,15 @@ export function cloneSettings(s: AppSettings): AppSettings {
 
 /** Fill in anything missing from saved settings (e.g. keys added in a newer version). */
 export function mergeSettings(saved?: Partial<AppSettings>): AppSettings {
-  return {
+  const merged = {
     ...DEFAULT_SETTINGS,
     ...saved,
     colors: { ...DEFAULT_SETTINGS.colors, ...saved?.colors },
     icons: { ...DEFAULT_SETTINGS.icons, ...saved?.icons },
   };
+  // older versions saved the trash icon without U+FE0F, which renders as a faint outline
+  if (merged.icons.delete === '\u{1F5D1}') merged.icons.delete = DEFAULT_SETTINGS.icons.delete;
+  return merged;
 }
 
 export function applySettings(s: AppSettings): void {
