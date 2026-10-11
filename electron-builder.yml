@@ -1,0 +1,29 @@
+appId: com.dnd.soundboard
+productName: D&D Soundboard
+copyright: Copyright © 2026
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - "!dist/**/*.map"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # icon: build/icon.ico  # add build/icon.ico and uncomment to use a custom icon
+  requestedExecutionLevel: asInvoker
+  signAndEditExecutable: false
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: D&D Soundboard
+
+publish: null

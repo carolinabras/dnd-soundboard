@@ -1,0 +1,31 @@
+{
+  "name": "dnd-soundboard",
+  "version": "1.0.0",
+  "description": "D&D Soundboard - play ambient sounds and music for tabletop RPG sessions",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build:main": "webpack --config webpack.main.config.js",
+    "build:renderer": "webpack --config webpack.renderer.config.js",
+    "build": "npm run build:main && npm run build:renderer",
+    "start": "npm run build && electron .",
+    "dev": "concurrently --kill-others \"webpack --config webpack.main.config.js --watch\" \"webpack --config webpack.renderer.config.js --watch\" \"wait-on dist/main/index.js dist/renderer/index.html && electron . --inspect\"",
+    "dist": "npm run build && electron-builder --win --x64",
+    "dist:dir": "npm run build && electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.11",
+    "@types/node": "^20.14.0",
+    "concurrently": "^8.2.2",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "html-webpack-plugin": "^5.6.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.5.0",
+    "wait-on": "^7.2.0",
+    "webpack": "^5.92.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "howler": "^2.2.4"
+  }
+}
